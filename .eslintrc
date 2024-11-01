@@ -1,0 +1,10 @@
+{
+  "extends": "umi",
+  "env": {
+    // ...
+    "webextensions": true
+  },
+  "globals": {
+    "i18n": true
+  }
+}
