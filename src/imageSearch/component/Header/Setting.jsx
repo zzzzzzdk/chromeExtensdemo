@@ -65,7 +65,7 @@ export default class Setting extends React.Component {
     let inited = true;
     return (
       <SettingContainer>
-        <div className="sortSelection">
+        {/* <div className="sortSelection">
           <h3>{i18n('sort_by')}</h3>
           <RadioGroup
             onChange={e => updateSortBy(e.target.value)}
@@ -76,8 +76,8 @@ export default class Setting extends React.Component {
             <RadioButton value="area">{i18n('area')}</RadioButton>
             <RadioButton value="relevance">{i18n('relevance')}</RadioButton>
           </RadioGroup>
-        </div>
-        <div className="displayMode">
+        </div> */}
+        {/* <div className="displayMode">
           <h3>{i18n('display_mode')}</h3>
           <RadioGroup
             onChange={e => updateDisplayMode(e.target.value)}
@@ -86,11 +86,11 @@ export default class Setting extends React.Component {
             <RadioButton value={1}>{i18n('list')}</RadioButton>
             <RadioButton value={2}>{i18n('image_wall')}</RadioButton>
           </RadioGroup>
-        </div>
-        <div className="guessKeyword">
+        </div> */}
+        {/* <div className="guessKeyword">
           <h3>{i18n('guessing_keyword')}</h3>
           <RadioGroup>{this.generateImageInfo(imageInfo)}</RadioGroup>
-        </div>
+        </div> */}
       </SettingContainer>
     );
   }

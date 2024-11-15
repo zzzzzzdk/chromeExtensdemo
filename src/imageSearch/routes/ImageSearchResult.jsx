@@ -110,18 +110,18 @@ class ImageSearchResult extends React.Component {
                   googleDone={imageSearch['googleDone']}
                   baidu={imageSearch['baidu']}
                   baiduDone={imageSearch['baiduDone']}
-                  yandex={imageSearch['yandex']}
-                  yandexDone={imageSearch['yandexDone']}
-                  bing={imageSearch['bing']}
-                  bingDone={imageSearch['bingDone']}
-                  tineye={imageSearch['tineye']}
-                  tineyeDone={imageSearch['tineyeDone']}
-                  saucenao={imageSearch['saucenao']}
-                  saucenaoDone={imageSearch['saucenaoDone']}
-                  iqdb={imageSearch['iqdb']}
-                  iqdbDone={imageSearch['iqdbDone']}
-                  ascii2d={imageSearch['ascii2d']}
-                  ascii2dDone={imageSearch['ascii2dDone']}
+                  yitu={imageSearch['yitu']}
+                  yituDone={imageSearch['yituDone']}
+                  // bing={imageSearch['bing']}
+                  // bingDone={imageSearch['bingDone']}
+                  // tineye={imageSearch['tineye']}
+                  // tineyeDone={imageSearch['tineyeDone']}
+                  // saucenao={imageSearch['saucenao']}
+                  // saucenaoDone={imageSearch['saucenaoDone']}
+                  // iqdb={imageSearch['iqdb']}
+                  // iqdbDone={imageSearch['iqdbDone']}
+                  // ascii2d={imageSearch['ascii2d']}
+                  // ascii2dDone={imageSearch['ascii2dDone']}
                 />
                 <Setting
                   updateDisplayMode={actions.imageSearchUpdateDisplayMode}
@@ -137,11 +137,11 @@ class ImageSearchResult extends React.Component {
             </Row>
           </div>
           <div className="result">
-            {imageSearch.displayMode == 1 ? (
+            {/* {imageSearch.displayMode == 1 ? (
               <ImageList imageDataList={imageSearch.searchResult} />
-            ) : (
+            ) : ( */}
               <ImageWall imageDataList={imageSearch.searchResult} />
-            )}
+            {/* )} */}
           </div>
         </ResultContainer>
       );

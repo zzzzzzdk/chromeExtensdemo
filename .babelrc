@@ -1,0 +1,14 @@
+{
+  "presets": [
+    ["@babel/preset-env", { "targets": { "browsers": ["last 2 versions", "not dead"] } }],
+    "@babel/preset-react"
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-proposal-private-methods",
+    "@babel/plugin-proposal-private-property-in-object",
+    "@babel/plugin-proposal-numeric-separator",
+    "@babel/plugin-proposal-logical-assignment-operators"
+  ]
+}

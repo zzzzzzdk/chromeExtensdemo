@@ -5,7 +5,8 @@ import faSolid from '@fortawesome/fontawesome-free-solid';
 import { Row, Col, Card, Icon, Popover, Avatar, Modal } from 'antd';
 import { engineIcon } from 'SRC/constant/settingMap.js';
 import Loader from 'SRC/common/component/Loader.jsx';
-import ImageLost from 'SRC/assets/fun/ImageLost.png';
+import ImageLost from 'SRC/assets/fun/error.png';
+import nodata from 'SRC/assets/fun/no-data.png'
 const ResultContainer = styled.div`
   background:white;
   border: 1px solid #e8e8e8;
@@ -21,7 +22,7 @@ const ResultContainer = styled.div`
     bottom: 6px;
   }
   .ant-card-body{
-    padding: 0px;
+    padding: 30px;
   }
   .ant-avatar{
     opacity: 0.5
@@ -30,7 +31,11 @@ const ResultContainer = styled.div`
     opacity:0.8
     transition: opacity .25s ease-in-out;
   }
-
+  .nodata {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+  }
 `;
 const popoverContent = {
   maxWidth: '256px',
@@ -56,6 +61,7 @@ export default class ImageWall extends React.Component {
     });
   }
   imgError(e) {
+    console.log(ImageLost)
     e.target.src = ImageLost;
   }
   generateCardList(imageDataList) {
@@ -70,44 +76,25 @@ export default class ImageWall extends React.Component {
         let thatCol = container[eachRowCount];
         thatCol[thatCol.length] = (
           <div key={count}>
-            <Popover
-              content={
-                <div style={popoverContent}>
-                  {item.imageInfo.width == -1 ? (
-                    <p>{i18n('no_size_info')}</p>
-                  ) : (
-                    <p>{item.imageInfo.width + 'x' + item.imageInfo.height}</p>
-                  )}
-                  {item.description}
-                </div>
-              }
-              title={
-                <div style={popoverContent}>
-                  <a target="_blank" href={item.sourceUrl}>
-                    {item.title}
-                  </a>
-                </div>
+            <Card
+              hoverable={true}
+              style={{ width: '100%', minHeight: 60 }}
+              cover={
+                <img
+                  alt="Image Is Dead, Sorry"
+                  src={item.targetImage}
+                  onError={e => this.imgError(e)}
+                  onClick={() => this.showModal(item.bigImage)}
+                />
               }
             >
-              <Card
-                hoverable={true}
-                style={{ width: '100%', minHeight: 60 }}
-                cover={
-                  <img
-                    alt="Image Is Dead, Sorry"
-                    src={item.imageUrl}
-                    onError={e => this.imgError(e)}
-                    onClick={() => this.showModal(item.imageUrl)}
-                  />
-                }
-              >
-                <div className="cardMetaWrapper">
-                  <Card.Meta
-                    avatar={<Avatar src={engineIcon[item['searchEngine']]} />}
-                  />
-                </div>
-              </Card>
-            </Popover>
+              <div className="cardMetaWrapper">
+                <Card.Meta
+                  title={item.similarity + "%"}
+                  description={item.targetType}
+                />
+              </div>
+            </Card>
           </div>
         );
         count++;
@@ -149,7 +136,10 @@ export default class ImageWall extends React.Component {
     } else {
       return (
         <ResultContainer>
-          <Loader style={{ marginTop: '5%' }} />
+          {/* <Loader style={{ marginTop: '5%' }} /> */}
+          <div className="nodata">
+            <img src={nodata} alt="暂无数据" />
+          </div>
         </ResultContainer>
       );
     }

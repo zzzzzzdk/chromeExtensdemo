@@ -75,41 +75,17 @@ export default class ImageList extends React.Component {
             renderItem={item => (
               <List.Item
                 key={item.title}
-                actions={[
-                  <FAIcon
-                    onClick={() => this.showModal(item.imageUrl)}
-                    icon={faSolid.faSearchPlus}
-                  />,
-                  item.imageInfo.width == -1 ? (
-                    <p>{i18n('no_size_info')}</p>
-                  ) : (
-                    <p className="sizeInfo">
-                      {item.imageInfo.height + ' x ' + item.imageInfo.width}
-                    </p>
-                  ),
-                  <img
-                    className="searchEngine"
-                    src={engineIcon[item['searchEngine']]}
-                  />,
-                ]}
                 extra={
                   <img
                     className="searchImage"
                     alt="Image Is Dead, Sorry"
-                    onClick={() => this.showModal(item.imageUrl)}
-                    src={item.imageUrl}
+                    onClick={() => this.showModal(item.bigImage)}
+                    src={item.targetImage}
                     onError={e => this.imgError(e)}
                   />
                 }
               >
-                <List.Item.Meta
-                  title={
-                    <a href={item.sourceUrl} target="_blank">
-                      {item.title}
-                    </a>
-                  }
-                />
-                {item.description}
+                {item.similarity || 0}
               </List.Item>
             )}
           />

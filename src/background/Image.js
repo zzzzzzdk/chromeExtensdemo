@@ -9,6 +9,8 @@ import { get, set, getDB, setDB } from 'SRC/utils/db.js';
 import ajax from 'SRC/utils/ajax.js';
 import { checkUrlOrBase64 } from 'SRC/utils/imageUtils';
 import { createNewTab, generateNewTabUrl } from 'SRC/utils/browserUtils';
+import { AllowIps } from 'SRC/constant/constants';
+
 export default class Image {
   constructor() {
     this.noobUploadUrl;
@@ -19,12 +21,13 @@ export default class Image {
     this.fetchFunction = {
       googleLink: reverseImageSearch.fetchGoogleLink,
       baiduLink: reverseImageSearch.fetchBaiduLink,
-      tineyeLink: reverseImageSearch.fetchTineyeLink,
-      bingLink: reverseImageSearch.fetchBingLink,
-      yandexLink: reverseImageSearch.fetchYandexLink,
-      saucenaoLink: reverseImageSearch.fetchSauceNaoLink,
-      iqdbLink: reverseImageSearch.fetchIQDBLink,
-      ascii2dLink: reverseImageSearch.fetchAscii2dLink,
+      yituLink: reverseImageSearch.fetchYituLink,
+      // tineyeLink: reverseImageSearch.fetchTineyeLink,
+      // bingLink: reverseImageSearch.fetchBingLink,
+      // yandexLink: reverseImageSearch.fetchYandexLink,
+      // saucenaoLink: reverseImageSearch.fetchSauceNaoLink,
+      // iqdbLink: reverseImageSearch.fetchIQDBLink,
+      // ascii2dLink: reverseImageSearch.fetchAscii2dLink,
     };
   }
 
@@ -37,10 +40,60 @@ export default class Image {
   }
 
   async init() {
-    await this.updateImageSearchContextMenu();
-    await this.updateExtractImageContextMenu();
-    await this.updateScreenshotSearchContextMenu();
-    await this.getUploadServer();
+    const _this = this;
+    // 监听标签页激活事件
+    chrome.tabs.onActivated.addListener(async activeInfo => {
+      chrome.tabs.get(activeInfo.tabId, tab => {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError.message);
+          return;
+        }
+        checkTabUrl(tab.url);
+      });
+    });
+
+    // 监听标签页更新事件
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (changeInfo.url) {
+        checkTabUrl(changeInfo.url);
+      }
+    });
+
+    // 监听来自弹出窗口的消息
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action === 'getAllowedHandle') {
+        sendResponse({ allowHandle: data.allowHandle });
+      }
+    });
+
+    // 检查URL是否符合允许的IP条件
+    async function checkTabUrl(url) {
+      // console.log('checkurl', url)
+      // 先清除右键绑定
+      _this.removeContextMenu();
+      try {
+        const hostname = new URL(url).hostname;
+        if (isAllowedIP(hostname)) {
+          console.log(`URL ${url} is allowed.`);
+          await _this.updateImageSearchContextMenu();
+          await _this.updateExtractImageContextMenu();
+          await _this.updateScreenshotSearchContextMenu();
+          data.allowHandle = true;
+        } else {
+          data.allowHandle = false;
+          // console.log(`URL ${url} is not allowed.`);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    // 判断主机名是否为允许的IP地址
+    function isAllowedIP(hostname) {
+      return AllowIps.includes(hostname);
+    }
+
+    // await this.getUploadServer();
   }
 
   async getUploadServer() {
@@ -96,7 +149,7 @@ export default class Image {
                   'screenshotFailed',
                   {
                     type: 'basic',
-                    iconUrl: '/images/icon_128.png',
+                    iconUrl: '/images/icon_128x128.png',
                     title: GL('ls_1'),
                     message: GL('ls_2'),
                   },
@@ -154,6 +207,21 @@ export default class Image {
     }
   }
 
+  removeContextMenu() {
+    if (data.Image.screenshotSearchHandle) {
+      browser.contextMenus.remove(data.Image.screenshotSearchHandle);
+      data.Image.screenshotSearchHandle = null;
+    }
+    if (data.Image.imageSearchHandle) {
+      browser.contextMenus.remove(data.Image.imageSearchHandle);
+      data.Image.imageSearchHandle = null;
+    }
+    if (data.Image.extractImageHandle) {
+      browser.contextMenus.remove(data.Image.extractImageHandle);
+      data.Image.extractImageHandle = null;
+    }
+  }
+  // 提取图片
   extractImages(info, tab) {
     logEvent({
       category: 'extractImages',
@@ -173,7 +241,7 @@ export default class Image {
             'extractImages',
             {
               type: 'basic',
-              iconUrl: '/static/nooboxLogos/icon_128.png',
+              iconUrl: '/static/nooboxLogos/icon_128x128.png',
               title: GL('extractImages'),
               message: GL('ls_4'),
             },
@@ -263,7 +331,13 @@ export default class Image {
       active: await get('imageSearchNewTabFront'),
     });
   }
-  async beginImageSearch(base64orUrl) {
+  /**
+   *
+   * @param {*} param0
+   * data: 单张为base64或者url，多张为数组
+   */
+  async beginImageSearch(data) {
+    const _this = this;
     let cursor = await getDB('imageCursor');
     if (typeof cursor === 'number') {
       cursor++;
@@ -272,69 +346,108 @@ export default class Image {
       cursor = 0;
       await setDB('imageCursor', cursor);
     }
-    let imageLink;
-    let url;
-    let base64Flag;
-    //Check base64 or Url
-    switch (checkUrlOrBase64(base64orUrl)) {
-      case 'base64':
-        // console.log("here");
-        base64Flag = true;
-        await setDB(cursor, { base64: base64orUrl });
-        url = await generateNewTabUrl('searchResult.html');
-        await createNewTab({
-          url: url + '#/' + cursor,
-          active: await get('imageSearchNewTabFront'),
-        });
-        logEvent({
-          category: 'imageSearch',
-          action: 'dataURI',
-        });
-        const requestBody = {
-          method: 'POST',
-          headers: {
-            //'User-Agent': 'Mozilla/4.0 MDN Example',
-            'Content-Type': 'application/json',
-          },
-          mode: 'cors',
-          body: JSON.stringify({ data: base64orUrl }),
-        };
-        let a = await ajax(this.noobUploadUrl, requestBody);
-        if (a.err) {
-          console.log('having error, switch to default server');
-          this.updateImageUploadUrl('ainoob.com');
-          this.updateImageDownloadUrl('ainoob.com');
-          a = await ajax(this.noobUploadUrl, requestBody);
-        }
-        imageLink = this.noobDownLoadUrl + a.data;
-        break;
-      case 'url':
-        // console.log(base64orUrl);
-        base64Flag = false;
-        await setDB(cursor, { url: base64orUrl });
-        url = await generateNewTabUrl('searchResult.html');
-        await createNewTab({
-          url: url + '#/' + cursor,
-          active: await get('imageSearchNewTabFront'),
-        });
-        logEvent({
-          category: 'imageSearch',
-          action: 'url',
-        });
-        imageLink = base64orUrl;
-        break;
-      default:
-        break;
+
+    if (!Array.isArray(data)) {
+      // _this.traverseFetch(data, cursor);
+      _this.getImageSearchResult(data);
+    } else {
+      // window.searchResult
+      data.forEach(async (item, index) => {
+        // 生成一个0到9秒之间的随机延迟时间（以毫秒为单位）
+        const randomDelay = Math.floor(Math.random() * 9000);
+        setTimeout(() => {
+          _this.getImageSearchResult(item, index);
+        }, randomDelay);
+        // _this.traverseFetch(item, cursor)
+      });
     }
-    //Generate Image Link
-    //console.log(imageLink);
+
+    // // 跳转到结果页
+    // let url = await generateNewTabUrl('searchResult.html');
+    // await createNewTab({
+    //   url: url + '#/' + cursor,
+    //   active: await get('imageSearchNewTabFront'),
+    // });
+  }
+
+  async getImageSearchResult(base64String, index = 0) {
+    const params = {
+      [`base64String-${index}`]: base64String,
+    };
+
+    // 存储参数
+    chrome.storage.local.set({ ...params }, async () => {
+      console.log('Parameters stored in storage');
+
+      // 创建新标签页
+      const tab = await chrome.tabs.create(
+        {
+          url: 'http://localhost:8081/index.html#/image?baseIndex=' + index,
+          active: false,
+        },
+        async tab => {
+          // await chrome.runtime.sendMessage(
+          //   {
+          //     job: 'autoUploadAndSearch',
+          //     category: 'autoUploadAndSearch',
+          //     action: 'run',
+          //     base64String: item,
+          //     cursor: cursor,
+          //     tabId: tab.id,
+          //   },
+          //   function(response) {
+          //     console.log(response)
+          //   },
+          // );
+          chrome.tabs.executeScript(tab.id, {
+            // file: '/js/automation.js',
+            code: `
+             var element = document.createElement('div');
+          element.textContent = '这是根据参数在新标签页创建的元素：' + receivedParams.message;
+          document.body.appendChild(element);`,
+            runAt: 'document_idle',
+          });
+          // setTimeout(() => {
+          //   chrome.tabs.sendMessage(
+          //     tab.id,
+          //     {
+          //       job: 'autoUploadAndSearch',
+          //       category: 'autoUploadAndSearch',
+          //       action: 'run',
+          //       base64String: item,
+          //       cursor: cursor,
+          //       tabId: tab.id,
+          //     },
+          //     function(response) {
+          //       if (response) {
+          //         console.log('收到来自指定标签页的回复：', response);
+          //       } else {
+          //         console.log('未收到指定标签页的回复');
+          //       }
+          //     },
+          //   );
+          // }, 2000);
+
+          // setTimeout(() => {
+
+          // }, 5000);
+        },
+      );
+    });
+  }
+  // 遍历接口执行请求
+  async traverseFetch(data, cursor) {
+    let base64Flag = checkUrlOrBase64(data) === 'url' ? false : true;
+    let imageLink = data;
+
     if (imageLink) {
       let resultObj = {
         searchImageInfo: [],
         searchResult: [],
         engineLink: {},
-        base64: base64Flag ? base64orUrl : '',
-        url: !base64Flag ? base64orUrl : '',
+        base64Flag: base64Flag,
+        base64: base64Flag ? data : '',
+        url: !base64Flag ? data : '',
       };
       //Get Opened Engine and send request
       for (let i = 0; i < engineMap.length; i++) {
@@ -343,26 +456,8 @@ export default class Image {
         let check = await get(dbName);
         if (check && this.fetchFunction[name + 'Link']) {
           resultObj.engineLink[name] = apiUrls[name] + imageLink;
-          if (name === 'bing') {
-            this.fetchFunction[name + 'Link'](
-              apiUrls[name] + imageLink,
-              imageLink,
-              cursor,
-              resultObj,
-            );
-          } else if (name == 'yandex') {
-            this.fetchFunction[name + 'Link'](
-              apiUrls[name] + encodeURIComponent(imageLink),
-              cursor,
-              resultObj,
-            );
-          } else if (name == 'ascii2d') {
-            this.fetchFunction[name + 'Link'](
-              apiUrls[name],
-              imageLink,
-              cursor,
-              resultObj,
-            );
+          if (name == 'yitu') {
+            this.fetchFunction[name + 'Link'](apiUrls[name], cursor, resultObj);
           } else {
             this.fetchFunction[name + 'Link'](
               apiUrls[name] + imageLink,
@@ -373,5 +468,30 @@ export default class Image {
         }
       }
     }
+
+    // //Check base64 or Url
+    // switch (checkUrlOrBase64(data)) {
+    //   case 'base64':
+    //     // console.log("here");
+    //     base64Flag = true
+    //     await setDB(cursor, { base64: data });
+
+    //     logEvent({
+    //       category: 'imageSearch',
+    //       action: 'dataURI',
+    //     });
+    //     break;
+    //   case 'url':
+    //     base64Flag = false
+    //     // console.log(data);
+    //     logEvent({
+    //       category: 'imageSearch',
+    //       action: 'url',
+    //     });
+    //     break;
+    //   default:
+    //     break;
+    // }
+    // await setDB(cursor, { url: data });
   }
 }

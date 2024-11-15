@@ -21,9 +21,9 @@ export default {
     baidu: false,
     baiduDone: false,
     baiduMax: 1,
-    yandex: false,
-    yandexDone: false,
-    yandexMax: 1,
+    yitu: false,
+    yituDone: false,
+    yituMax: 1,
     bing: false,
     bingDone: false,
     bingMax: 1,
@@ -102,7 +102,7 @@ export default {
       const imgDataURI = workerCanvas.toDataURL();
       let message = {
         job: 'beginImageSearch',
-        base64: imgDataURI,
+        data: imgDataURI,
       };
       yield call(sendMessage, message);
     },
@@ -110,7 +110,7 @@ export default {
       let { base64, url } = yield select(state => state.imageSearch);
       let message = {
         job: 'beginImageSearch',
-        base64: base64 == '' ? url : base64,
+        data: base64 == '' ? url : base64,
       };
       yield call(sendMessage, message);
     },
@@ -152,7 +152,7 @@ export default {
   },
   subscriptions: {
     setupListener({ dispatch, history }) {
-      browser.runtime.onMessage.addListener((message, sender, response) => {
+      browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         let payload;
         if (message.job === 'image_result_update') {
           payload = {
@@ -176,6 +176,9 @@ export default {
         if (payload) {
           dispatch({ type: 'updateInnerState', payload: payload });
         }
+        sendResponse({
+          success: true,
+        });
       });
     },
   },

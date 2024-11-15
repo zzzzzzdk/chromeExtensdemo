@@ -10,6 +10,12 @@ import {
 import { getDB, set } from '../utils/db';
 import { wait } from '../utils';
 import { logEvent } from '../utils/bello';
+// import {
+//   connect,
+//   ExtensionTransport,
+// } from '../utils/puppeteer-core/lib/esm/puppeteer/puppeteer-core-browser.js';
+// import { WebContainer } from '@webcontainer/api';
+// Call only once
 userBrowser();
 
 const autoRefresh = new AutoRefresh();
@@ -17,6 +23,10 @@ const image = new Image();
 const options = new Options();
 
 let lastVideoControl = 0;
+
+chrome.runtime.onInstalled.addListener(function() {
+  console.log('Extension installed');
+});
 
 browser.tabs.onRemoved.addListener(tabId => {
   autoRefresh.delete(tabId);
@@ -72,8 +82,8 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const autoRefreshStatus = autoRefresh.getStatus(tabId);
     sendResponse(autoRefreshStatus);
   } else if (job === 'beginImageSearch') {
-    const { base64 } = request;
-    image.beginImageSearch(base64);
+    const { data } = request;
+    image.beginImageSearch(data);
     // browser.tabs.create({ url:"/searchResult.html" });
   } else if (job === 'loadImageHistory') {
     const { cursor } = request;
@@ -125,6 +135,26 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         }
       }
     });
+  } else if (job == 'handleSearch') {
+    // // const { tabId } = request;
+    // console.log(sender.tab.id)
+    // // const tabId =  await getCurrentTab()
+    // chrome.tabs.executeScript({
+    //   target: { tabId: sender.tab.id, allFrames: true },
+    //   code: `console.log('location:', window.location.href);`,
+    // }, () => console.log("script injected in all frames"))
+    // sendResponse(request);
+
+    // });
+
+    try {
+      // chrome.debugger.onEvent.addListener((source, method, params) => {
+      //   console.log(source);
+      // });
+      // Create a tab or find a tab to attach to.
+    } catch (error) {
+      console.error('Error running Puppeteer:', error);
+    }
   }
 });
 
@@ -132,3 +162,68 @@ document.addEventListener('DOMContentLoaded', async () => {
   await options.init();
   await image.init();
 });
+
+// chrome.runtime.onInstalled.addListener(() => {
+//   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+//     if (tabs.length > 0) {
+//       const tabId = tabs[0].id;
+//       chrome.debugger.attach({ tabId }, '1.3', () => {
+//         if (chrome.runtime.lastError) {
+//           console.error(
+//             'Debugger attach failed:',
+//             chrome.runtime.lastError.message,
+//           );
+//           return;
+//         }
+
+//         chrome.debugger.sendCommand({ tabId }, 'Page.enable', () => {
+//           if (chrome.runtime.lastError) {
+//             console.error(
+//               'Page.enable command failed:',
+//               chrome.runtime.lastError.message,
+//             );
+//             return;
+//           }
+
+//           chrome.debugger.sendCommand(
+//             { tabId },
+//             'Page.navigate',
+//             { url: 'https://example.com' },
+//             () => {
+//               if (chrome.runtime.lastError) {
+//                 console.error(
+//                   'Page.navigate command failed:',
+//                   chrome.runtime.lastError.message,
+//                 );
+//                 return;
+//               }
+
+//               chrome.debugger.sendCommand(
+//                 { tabId },
+//                 'Page.loadEventFired',
+//                 () => {
+//                   if (chrome.runtime.lastError) {
+//                     console.error(
+//                       'Page.loadEventFired command failed:',
+//                       chrome.runtime.lastError.message,
+//                     );
+//                     return;
+//                   }
+
+//                   chrome.debugger.detach({ tabId }, () => {
+//                     if (chrome.runtime.lastError) {
+//                       console.error(
+//                         'Debugger detach failed:',
+//                         chrome.runtime.lastError.message,
+//                       );
+//                     }
+//                   });
+//                 },
+//               );
+//             },
+//           );
+//         });
+//       });
+//     }
+//   });
+// });

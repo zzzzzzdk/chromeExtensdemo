@@ -29,6 +29,8 @@ choose_tools_from_here:
   message: ツールを選択しますか？
 support_for_a_single_upload:
   message: シングルアップロード画像をサポート
+support_for_multiple_upload:
+  message: 複数の画像のアップロードをサポート
 html_5_video_control:
   message: HTML 5ビデオコントロール（プレビュー）
 auto_refresh:
@@ -40,6 +42,10 @@ image:
   message: 画像関連
 reverse_image_search:
   message: 画像で検索
+face_by_face:
+  message: 以脸搜脸
+track_by_pic:
+  message: 人脸图片查询轨迹
 result_page_tab_front:
   message: 結果は新しいタブに表示されます
 extract_images:

@@ -14,6 +14,7 @@ export default {
     showExps: true,
     showTools: true,
     showEngines: true,
+    showProvince: false,
     expandImage: [],
   },
   effects: {
@@ -21,7 +22,7 @@ export default {
       let currentTool = [];
       let currentExp = [];
       let currentEngine = {};
-      let { showEngines, showExps, showTools } = yield select(
+      let { showEngines, showExps, showTools, showProvince } = yield select(
         state => state.options,
       );
       for (let i = 0; i < toolSettingMap.length; i++) {
@@ -29,6 +30,13 @@ export default {
 
         if (toolSettingMap[i].name == 'imageSearch' && !checked) {
           showEngines = false;
+        }
+        if (
+          (toolSettingMap[i].name == 'faceByFace' ||
+            toolSettingMap[i].name == 'trackByPic') &&
+          checked
+        ) {
+          showProvince = true;
         }
 
         if (checked) {
@@ -67,6 +75,7 @@ export default {
           inited: true,
           showEngines,
           expandImage,
+          showProvince,
         },
       });
     },
@@ -85,7 +94,19 @@ export default {
 
     *onCheckTool({ payload }, { call, put, select }) {
       let newSetting = payload.filter(name => name !== 'image');
-      let { currentTool, showEngines } = yield select(state => state.options);
+      let { currentTool, showEngines, showProvince } = yield select(
+        state => state.options,
+      );
+      // 判断省份是否显示
+      if (
+        !newSetting.includes('faceByFace') &&
+        !newSetting.includes('trackByPic')
+      ) {
+        showProvince = false;
+      } else {
+        showProvince = true;
+      }
+
       if (currentTool.length > newSetting.length) {
         //Close Tool
         for (let name of currentTool) {
@@ -126,7 +147,7 @@ export default {
       }
       yield put({
         type: 'updateState',
-        payload: { currentTool: newSetting, showEngines },
+        payload: { currentTool: newSetting, showEngines, showProvince },
       });
     },
     *onExpandTree({ payload }, { call, put, select }) {

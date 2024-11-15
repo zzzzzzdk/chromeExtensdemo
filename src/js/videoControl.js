@@ -24,7 +24,6 @@ function handleVisibilityChange() {
     videoElement.play();
   }
 }
-
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.job) {
     if (request.job === 'videoControlContentScriptSwitch') {

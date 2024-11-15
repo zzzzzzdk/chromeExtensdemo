@@ -1,4 +1,7 @@
-
+  include: [
+          path.resolve(__dirname, 'node_modules/puppeteer-core'),
+          path.resolve(__dirname, 'node_modules/@webcontainer'),
+        ],
 <h1 align="center">
   <br>
   <a href="https://chrome.google.com/webstore/detail/noobox-search-by-image/kidibbfcblfbbafhnlanccjjdehoahep"><img src="https://user-images.githubusercontent.com/12090689/45327137-5daeff80-b524-11e8-8398-36ee837c54e7.png" alt="NooBox" width="100"></a>

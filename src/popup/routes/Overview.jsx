@@ -19,6 +19,9 @@ const OverviewContainer = styled.div`
     .ant-upload {
       border-radius: 0;
     }
+    .ant-upload-disabled {
+      opacity: 0.6;
+    }
   }
 
   .h5Video {
@@ -89,8 +92,30 @@ class Overview extends React.Component {
       actions.overviewInit();
     }
   }
+
+  async handleOn() {
+    chrome.runtime.sendMessage({
+      job: 'handleSearch',
+      tabId: '123',
+    });
+    // 获取当前激活的tab页
+    // let tab
+    // await chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    //   console.log(tabs)
+    //   if (tabs[0]) {
+    //     console.log('当前tab: ', tabs[0])
+
+    //     await chrome.tabs.sendMessage(tabs[0].id, { action: "autoUploadAndSearch" }, () => {
+
+    //     })
+    //   } else {
+    //   }
+    // })
+  }
+
   render() {
-    const { actions, overview } = this.props;
+    const { actions, overview, options } = this.props;
+    // console.log(options)
     if (!overview.inited) {
       return <Loader style={{ marginTop: '20%' }} />;
     } else {
@@ -124,9 +149,9 @@ class Overview extends React.Component {
       );
       let funStuff;
       if (
-        !imageSearch
+        !imageSearch &&
         // && !autoRefresh
-        && !html5Video
+        !html5Video
       ) {
         funStuff = (
           <div className="funStuff">
@@ -142,19 +167,25 @@ class Overview extends React.Component {
           </div>
         );
       }
+
+      let provinceSelect = options.showProvince ? (
+        <div className="provinceSelect">省份</div>
+      ) : (
+        undefined
+      );
+
       return (
         <OverviewContainer>
           {imageSearch}
+          {provinceSelect}
           {/* {autoRefresh} */}
           {html5Video}
           {funStuff}
+          {/* <Button onClick={this.handleOn}>执行</Button> */}
         </OverviewContainer>
       );
     }
   }
 }
 
-export default connect(
-  reselector,
-  reduxActions,
-)(Overview);
+export default connect(reselector, reduxActions)(Overview);

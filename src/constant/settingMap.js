@@ -1,5 +1,6 @@
- import google from 'SRC/assets/engineLogos/google.png';
+import google from 'SRC/assets/engineLogos/google.png';
 import baidu from 'SRC/assets/engineLogos/baidu.png';
+import yitu from 'SRC/assets/engineLogos/yitu.png';
 import ascii2d from 'SRC/assets/engineLogos/ascii2d.png';
 import bing from 'SRC/assets/engineLogos/bing.png';
 import saucenao from 'SRC/assets/engineLogos/saucenao.png';
@@ -18,17 +19,23 @@ export const engineIcon = {
   // yandex: yandex,
 };
 export const engineMap = [
+  // {
+  //   name: 'google',
+  //   icon: google,
+  //   dbName: 'imageSearchUrl_google',
+  //   dbNameMaxSearch: 'imageSearchUrl_google_max',
+  // },
+  // {
+  //   name: 'baidu',
+  //   icon: baidu,
+  //   dbName: 'imageSearchUrl_baidu',
+  //   dbNameMaxSearch: 'imageSearchUrl_baidu_max',
+  // },
   {
-    name: 'google',
-    icon: google,
-    dbName: 'imageSearchUrl_google',
-    dbNameMaxSearch: 'imageSearchUrl_google_max',
-  },
-  {
-    name: 'baidu',
-    icon: baidu,
-    dbName: 'imageSearchUrl_baidu',
-    dbNameMaxSearch: 'imageSearchUrl_baidu_max',
+    name: 'yitu',
+    icon: yitu,
+    dbName: 'imageSearchUrl_yitu',
+    dbNameMaxSearch: 'imageSearchUrl_yitu_max',
   },
   // {
   //   name: 'yandex',
@@ -73,7 +80,9 @@ export const settingsMap = [
   { name: 'checkUpdate', value: false },
   { name: 'videoControl', value: false },
   { name: 'extractImages', value: false },
-  { name: 'imageSearch', value: false },
+  { name: 'faceByFace', value: false },
+  { name: 'trackByPic', value: true },
+  { name: 'imageSearch', value: true },
   { name: 'imageSearchNewTabFront', value: false },
   { name: 'screenshotSearch', value: false },
 ];
@@ -82,6 +91,8 @@ export const toolSettingMap = [
   { name: 'videoControl', value: false },
   { name: 'extractImages', value: false },
   { name: 'imageSearch', value: false },
+  { name: 'faceByFace', value: true },
+  { name: 'trackByPic', value: true },
   { name: 'imageSearchNewTabFront', value: false },
   { name: 'screenshotSearch', value: false },
 ];

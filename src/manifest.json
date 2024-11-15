@@ -5,12 +5,12 @@
   "short_name": "NB",
   "version": "1.0.2.5",
   "browser_action": {
-    "default_icon": "static/nooboxLogos/icon_128.png",
-    "default_title": "鼠标放上的提示",
+    "default_icon": "static/nooboxLogos/icon_128x128.png",
+    "default_title": "一键联查",
     "default_popup": "popup.html"
   },
   "icons": {
-    "128": "static/nooboxLogos/icon_128.png"
+    "128": "static/nooboxLogos/icon_128x128.png"
   },
   "web_accessible_resources": ["searchResult.html"],
   "background": {
@@ -18,6 +18,7 @@
       "thirdParty/jquery.min.js",
       "thirdParty/fileSavor.js",
       "thirdParty/jszip.min.js",
+      "thirdParty/dayjs.min.js",
       "js/background.js"
     ]
   },
@@ -25,9 +26,12 @@
     {
       "matches": ["http://*/*", "https://*/*"],
       "js": [
+        "thirdParty/html2canvas.min.js",
         "thirdParty/jquery.min.js",
+        "js/automation.js",
         "js/videoControl.js",
-        "js/extractImages.js"
+        "js/extractImages.js",
+        "js/iframe.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -43,8 +47,14 @@
     "storage",
     "activeTab",
     "notifications",
+    "cookies",
+    "scripting",
+    "webRequest",
+    "webRequestBlocking",
+    "debugger",
+     "*://*/*",
     "<all_urls>"
   ],
   "minimum_chrome_version": "35",
-  "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'"
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
 }

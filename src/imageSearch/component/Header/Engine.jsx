@@ -14,7 +14,7 @@ import FAIcon from '@fortawesome/react-fontawesome';
 import faSolid from '@fortawesome/fontawesome-free-solid';
 import google from 'SRC/assets/engineLogos/google.png';
 import baidu from 'SRC/assets/engineLogos/baidu.png';
-import ascii2d from 'SRC/assets/engineLogos/ascii2d.png';
+import yitu from 'SRC/assets/engineLogos/yitu.png';
 import bing from 'SRC/assets/engineLogos/bing.png';
 import saucenao from 'SRC/assets/engineLogos/saucenao.png';
 import sogou from 'SRC/assets/engineLogos/sogou.png';
@@ -111,7 +111,7 @@ export default class Engine extends React.Component {
     return (
       <EngineContainer>
         <Card bordered={false}>
-          <Card.Grid style={gridStyle}>
+          {/* <Card.Grid style={gridStyle}>
             <div className="box">
               <div className="engineContainer">
                 <Spin
@@ -167,37 +167,37 @@ export default class Engine extends React.Component {
                 </div>
               </div>
             </div>
-          </Card.Grid>
+          </Card.Grid> */}
           <Card.Grid style={gridStyle}>
             <div className="box">
               <div className="engineContainer">
                 <div className="engineContainer">
                   <Spin
                     className={
-                      !this.props.yandex || this.props.yandexDone
+                      !this.props.yitu || this.props.yituDone
                         ? 'engineLoadingDone'
                         : 'engineLoading'
                     }
                     type="loading"
                   />
-                  <a href={engineLink['yandex']} target="_blank">
+                  <a href={engineLink['yitu']} target="_blank">
                     {' '}
                     <img
                       className={
-                        this.props.yandex
-                          ? this.props.yandexDone
+                        this.props.yitu
+                          ? this.props.yituDone
                             ? 'engineImage'
                             : 'engineImageLoading'
                           : 'engineImageHide'
                       }
-                      src={yandex}
+                      src={yitu}
                     />
                   </a>
                 </div>
               </div>
             </div>
           </Card.Grid>
-          <Card.Grid style={gridStyle}>
+          {/* <Card.Grid style={gridStyle}>
             <div className="box">
               <div className="engineContainer">
                 <div className="engineContainer">
@@ -383,7 +383,7 @@ export default class Engine extends React.Component {
                 </div>
               </div>
             </Popover>
-          </Card.Grid>
+          </Card.Grid> */}
         </Card>
       </EngineContainer>
     );

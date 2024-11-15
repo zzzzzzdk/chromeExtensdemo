@@ -182,7 +182,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           console.log(dataURL);
           chrome.extension.sendMessage({
             job: 'beginImageSearch',
-            base64: dataURL,
+            data: dataURL,
           });
         });
         setTimeout(loadScreenshot, 300);

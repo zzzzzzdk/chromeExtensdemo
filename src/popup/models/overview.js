@@ -105,9 +105,11 @@ export default {
       });
     },
     *imageSearchBegin({ payload }, { call, put, select }) {
+      // console.log(payload)
+      // debugger
       let message = {
         job: 'beginImageSearch',
-        base64: payload,
+        ...payload,
       };
       yield call(sendMessage, message);
       yield call(sendMessage, {

@@ -32,8 +32,14 @@ choose_tools_from_here:
   message: Choose Tools From Here
 reverse_image_search:
   message: Reverse Image Search
+face_by_face:
+  message: 以脸搜脸
+track_by_pic:
+  message: 人脸图片查询轨迹
 support_for_a_single_upload:
   message: Support for single upload
+support_for_multiple_upload:
+  message: Can support uploading multiple images
 html_5_video_control:
   message: HTML 5 Video Control (Alpha)
 auto_refresh:

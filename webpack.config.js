@@ -16,10 +16,23 @@ const x = {
     ]),
   ],
   entry: {
-    popup: ['babel-polyfill', './src/popup/popup.js'],
-    background: ['babel-polyfill', './src/background/index.js'],
-    imageSearch: ['babel-polyfill', './src/imageSearch/imageSearch.js'],
+    popup: [
+      'core-js/stable',
+      'regenerator-runtime/runtime',
+      './src/popup/popup.js',
+    ],
+    background: [
+      'core-js/stable',
+      'regenerator-runtime/runtime',
+      './src/background/index.js',
+    ],
+    imageSearch: [
+      'core-js/stable',
+      'regenerator-runtime/runtime',
+      './src/imageSearch/imageSearch.js',
+    ],
   },
+
   resolve: {
     extensions: ['.webpack.js', '.js', '.jsx'],
     alias: {
@@ -31,25 +44,27 @@ const x = {
     rules: [
       {
         test: /\.jsx?$/,
-        loader: 'babel-loader',
         exclude: [/node_modules/],
-        query: {
-          presets: [
-            'react',
-            [
-              'env',
-              {
-                targets: {
-                  browsers: ['> 1%'],
-                },
-              },
+        use: {
+          loader: 'babel-loader',
+        },
+      },
+      {
+        test: /\.(js|ts)$/,
+        include: [
+          path.resolve(__dirname, 'src'),
+          path.resolve(__dirname, 'node_modules/@webcontainer'),
+          path.resolve(__dirname, 'node_modules/node-schedule'),
+        ],
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+            plugins: [
+              '@babel/plugin-proposal-class-properties',
+              '@babel/plugin-proposal-numeric-separator',
             ],
-          ],
-          plugins: [
-            'transform-es2015-destructuring',
-            'transform-es2015-parameters',
-            'transform-object-rest-spread',
-          ],
+          },
         },
       },
       {
@@ -69,6 +84,12 @@ const x = {
   output: {
     path: path.resolve('dist'),
     filename: 'js/[name].js',
+  },
+  devServer: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
   },
 };
 

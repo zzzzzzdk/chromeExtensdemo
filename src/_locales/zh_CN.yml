@@ -1,5 +1,5 @@
 appName:
-    message: 二箱 以图搜图
+    message: 一键联查
 appDesc:
     message: 一个实用的工具箱！多引擎以图搜图+提取图片+截图搜索+HTML5视频控制
 #Context Menu
@@ -31,6 +31,8 @@ choose_tools_from_here:
   message: 选择一种工具？
 support_for_a_single_upload:
   message: 仅支持上传单张图片
+support_for_multiple_upload:
+  message: 可支持上传多张图片
 html_5_video_control:
   message: HTML 5 视频控制 (预览版)
 auto_refresh:
@@ -42,6 +44,10 @@ image:
   message: 图片相关
 reverse_image_search:
   message: 以图搜图
+face_by_face:
+  message: 以脸搜脸
+track_by_pic:
+  message: 人脸图片查询轨迹
 result_page_tab_front:
   message: 结果显示在新标签页
 extract_images:
@@ -169,4 +175,4 @@ ls_1:
 ls_2:
   message: 无法在当前页面使用截图搜索
 ls_4:
-  message: 刷新这个页面以加载二箱组件，如果还是不行就说明当前页面不支持提取图片
+  message: 刷新这个页面以加载一键联查组件，如果还是不行就说明当前页面不支持提取图片

@@ -1,4 +1,9 @@
 import fetch from 'dva/fetch';
+import {
+  getCurrentTab,
+  sendMessage,
+  getCurrentCookies,
+} from 'SRC/utils/browserUtils';
 
 const parseResponse = response => {
   if (response.headers.get('Content-Type').indexOf('text/html') !== -1) {
@@ -25,7 +30,7 @@ const checkStatus = response => {
  * @param  {object} [options] The options we want to pass to "fetch"
  * @return {object}           An object containing either "data" or "err"
  */
-export default (url, options) => {
+export default async (url, options) => {
   return fetch(url, options)
     .then(checkStatus)
     .then(parseResponse)

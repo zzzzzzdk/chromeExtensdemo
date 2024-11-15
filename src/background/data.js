@@ -1,4 +1,5 @@
 export default {
+  allowHandle: false,
   AutoRefresh: {
     tabs: {},
   },
