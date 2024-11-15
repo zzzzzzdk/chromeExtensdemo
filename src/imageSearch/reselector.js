@@ -42,11 +42,8 @@ export const imageSearchSelector = state => {
   };
 };
 
-export default createSelector(
-  [imageSearchSelector],
-  imageSearch => {
-    return {
-      imageSearch,
-    };
-  },
-);
+export default createSelector([imageSearchSelector], imageSearch => {
+  return {
+    imageSearch,
+  };
+});

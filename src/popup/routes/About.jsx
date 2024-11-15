@@ -213,7 +213,4 @@ class About extends React.Component {
   }
 }
 
-export default connect(
-  reselector,
-  reduxActions,
-)(About);
+export default connect(reselector, reduxActions)(About);

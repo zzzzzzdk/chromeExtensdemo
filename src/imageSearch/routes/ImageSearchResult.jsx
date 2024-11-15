@@ -140,7 +140,7 @@ class ImageSearchResult extends React.Component {
             {/* {imageSearch.displayMode == 1 ? (
               <ImageList imageDataList={imageSearch.searchResult} />
             ) : ( */}
-              <ImageWall imageDataList={imageSearch.searchResult} />
+            <ImageWall imageDataList={imageSearch.searchResult} />
             {/* )} */}
           </div>
         </ResultContainer>
@@ -149,7 +149,4 @@ class ImageSearchResult extends React.Component {
   }
 }
 
-export default connect(
-  reselector,
-  reduxActions,
-)(ImageSearchResult);
+export default connect(reselector, reduxActions)(ImageSearchResult);

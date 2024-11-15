@@ -6,7 +6,7 @@ import { Row, Col, Card, Icon, Popover, Avatar, Modal } from 'antd';
 import { engineIcon } from 'SRC/constant/settingMap.js';
 import Loader from 'SRC/common/component/Loader.jsx';
 import ImageLost from 'SRC/assets/fun/error.png';
-import nodata from 'SRC/assets/fun/no-data.png'
+import nodata from 'SRC/assets/fun/no-data.png';
 const ResultContainer = styled.div`
   background:white;
   border: 1px solid #e8e8e8;
@@ -61,7 +61,7 @@ export default class ImageWall extends React.Component {
     });
   }
   imgError(e) {
-    console.log(ImageLost)
+    console.log(ImageLost);
     e.target.src = ImageLost;
   }
   generateCardList(imageDataList) {
@@ -90,7 +90,7 @@ export default class ImageWall extends React.Component {
             >
               <div className="cardMetaWrapper">
                 <Card.Meta
-                  title={item.similarity + "%"}
+                  title={item.similarity + '%'}
                   description={item.targetType}
                 />
               </div>

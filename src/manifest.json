@@ -52,7 +52,7 @@
     "webRequest",
     "webRequestBlocking",
     "debugger",
-     "*://*/*",
+    "*://*/*",
     "<all_urls>"
   ],
   "minimum_chrome_version": "35",

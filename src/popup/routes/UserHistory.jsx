@@ -153,7 +153,4 @@ class UserHistory extends React.Component {
   }
 }
 
-export default connect(
-  reselector,
-  reduxActions,
-)(UserHistory);
+export default connect(reselector, reduxActions)(UserHistory);

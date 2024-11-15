@@ -101,14 +101,8 @@ class Options extends React.Component {
             {/* <TreeNode title={i18n('auto_refresh')} key="autoRefresh" /> */}
             {/* <TreeNode title={i18n('video_control')} key="videoControl" /> */}
             <TreeNode title={i18n('image')} key="image">
-              <TreeNode
-                title={i18n('face_by_face')}
-                key="faceByFace"
-              />
-              <TreeNode
-                title={i18n('track_by_pic')}
-                key="trackByPic"
-              />
+              <TreeNode title={i18n('face_by_face')} key="faceByFace" />
+              <TreeNode title={i18n('track_by_pic')} key="trackByPic" />
               <TreeNode
                 title={i18n('reverse_image_search')}
                 key="imageSearch"
@@ -140,7 +134,4 @@ class Options extends React.Component {
   }
 }
 
-export default connect(
-  reselector,
-  reduxActions,
-)(Options);
+export default connect(reselector, reduxActions)(Options);

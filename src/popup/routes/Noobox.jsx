@@ -74,9 +74,4 @@ class Noobox extends React.Component {
     );
   }
 }
-export default withRouter(
-  connect(
-    reselector,
-    reduxActions,
-  )(Noobox),
-);
+export default withRouter(connect(reselector, reduxActions)(Noobox));
