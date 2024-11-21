@@ -1,7 +1,7 @@
 appName:
   message: Noobox
 appDesc:
-  message: 実用的なツールボックス！検索エンジンをマップするマルチエンジン+画像の抽出+スクリーンショットの検索+ HTML5のビデオコントロール
+  message: 検索エンジンをマップするマルチエンジン+画像の抽出+スクリーンショットの検索
 search_this_image:
   message: この画像を検索
 extract_this_images:

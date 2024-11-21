@@ -52,9 +52,19 @@
     "webRequest",
     "webRequestBlocking",
     "debugger",
-    "*://*/*",
-    "<all_urls>"
+    "downloads",
+    "fileSystem",
+    "fileSystem.write",
+    "nativeMessaging",
+    "webNavigation",
+    "http://*/*",
+    "https://*/*",
+    "<all_urls>",
+    "pageCapture"
   ],
   "minimum_chrome_version": "35",
-  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+  "native_manifests": {
+    "com.yisa.nativeapp": "nativeapp.json"
+  }
 }

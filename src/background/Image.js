@@ -347,7 +347,7 @@ export default class Image {
       await setDB('imageCursor', cursor);
     }
 
-    if (!Array.isArray(data)) {
+    if (!Array.isArray(data.base64)) {
       // _this.traverseFetch(data, cursor);
       _this.getImageSearchResult(data);
     } else {
@@ -370,9 +370,11 @@ export default class Image {
     // });
   }
 
-  async getImageSearchResult(base64String, index = 0) {
+  async getImageSearchResult(data, index = 0) {
+    const { base64: base64String, filename } = data;
     const params = {
       [`base64String-${index}`]: base64String,
+      filename,
     };
 
     // 存储参数
@@ -382,31 +384,12 @@ export default class Image {
       // 创建新标签页
       const tab = await chrome.tabs.create(
         {
-          url: 'http://localhost:8081/index.html#/image?baseIndex=' + index,
+          // url: apiUrls.bszUrl + `?baseIndex=${index}`,
+          url:
+            'http://localhost:8081/index.html#/image' + `?baseIndex=${index}`,
           active: false,
         },
         async tab => {
-          // await chrome.runtime.sendMessage(
-          //   {
-          //     job: 'autoUploadAndSearch',
-          //     category: 'autoUploadAndSearch',
-          //     action: 'run',
-          //     base64String: item,
-          //     cursor: cursor,
-          //     tabId: tab.id,
-          //   },
-          //   function(response) {
-          //     console.log(response)
-          //   },
-          // );
-          chrome.tabs.executeScript(tab.id, {
-            // file: '/js/automation.js',
-            code: `
-             var element = document.createElement('div');
-          element.textContent = '这是根据参数在新标签页创建的元素：' + receivedParams.message;
-          document.body.appendChild(element);`,
-            runAt: 'document_idle',
-          });
           // setTimeout(() => {
           //   chrome.tabs.sendMessage(
           //     tab.id,
@@ -427,9 +410,7 @@ export default class Image {
           //     },
           //   );
           // }, 2000);
-
           // setTimeout(() => {
-
           // }, 5000);
         },
       );

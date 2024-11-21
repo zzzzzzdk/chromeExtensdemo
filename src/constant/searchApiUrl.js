@@ -1,6 +1,8 @@
 const fusionIp = 'http://192.168.11.12:82/api/fusion/v1';
 
 export const apiUrls = {
+  bszUrl: 'https://11.33.4.185/vsadapter/searchface',
+  sszUrl: 'https://56.4.30.164/iportal/',
   analysisImage: `${fusionIp}/common/analysisImage`,
   analysisImageClipping: `${fusionIp}/common/upload_analysis_image_clipping`,
   google: 'https://www.google.com/searchbyimage?&image_url=',

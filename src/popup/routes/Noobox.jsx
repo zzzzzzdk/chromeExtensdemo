@@ -21,10 +21,10 @@ import {
 import { Link, Router, Redirect } from 'react-router-dom';
 
 const NooboxContainer = styled.div`
-  width: 360px;
+  width: 460px;
   .ant-menu-item {
     text-align: center;
-    width: 33%;
+    width: 100%;
     font-size: 14pt;
   }
 `;
@@ -47,7 +47,7 @@ class Noobox extends React.Component {
                 <FAIcon icon={faSolid.faToolbox} />
               </Link>
             </Menu.Item>
-            <Menu.Item key={HISTORY_URL}>
+            {/* <Menu.Item key={HISTORY_URL}>
               <Link to={HISTORY_URL}>
                 <FAIcon icon={faSolid.faHistory} />
               </Link>
@@ -56,7 +56,7 @@ class Noobox extends React.Component {
               <Link to={OPTIONS_URL}>
                 <FAIcon icon={faSolid.faCog} />
               </Link>
-            </Menu.Item>
+            </Menu.Item> */}
             {/* <Menu.Item
               key={ABOUT_URL}
               onOpenChange={() => {

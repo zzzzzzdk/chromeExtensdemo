@@ -76,7 +76,10 @@ export default class UploadImage extends React.Component {
       this.getBase64(file, base64 => {
         imageSearchBegin({
           type: 'single',
-          data: base64,
+          data: {
+            filename: file.name,
+            base64: base64,
+          },
         });
       });
     } else {
@@ -101,7 +104,10 @@ export default class UploadImage extends React.Component {
         _this.getBase64(
           file,
           base64 => {
-            resolve(base64);
+            resolve({
+              filename: file.name,
+              base64: base64,
+            });
           },
           err => {
             reject(err);

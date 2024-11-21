@@ -1,7 +1,7 @@
 appName:
     message: 一键联查
 appDesc:
-    message: 一個實用的工具箱！多搜尋引擎以圖搜圖+提取圖片+擷圖搜尋+HTML5影片控制
+    message: 以圖搜圖+提取圖片+擷圖搜尋
 #Context Menu
 search_this_image:
   message: 搜尋這張圖片

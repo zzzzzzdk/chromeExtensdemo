@@ -10,19 +10,86 @@ import {
 import { getDB, set } from '../utils/db';
 import { wait } from '../utils';
 import { logEvent } from '../utils/bello';
-// import {
-//   connect,
-//   ExtensionTransport,
-// } from '../utils/puppeteer-core/lib/esm/puppeteer/puppeteer-core-browser.js';
-// import { WebContainer } from '@webcontainer/api';
-// Call only once
+import { apiUrls } from 'SRC/constant/searchApiUrl.js';
+
 userBrowser();
+
+const port = chrome.runtime.connectNative('com.yisa.nativeapp');
+
+port.onMessage.addListener(response => {
+  console.log('Received: ', response);
+  browser.notifications.clear('saveScreenshotPng');
+  const { status, path, action } = response;
+  if (action === 'download') {
+    //   if (status === 'success') {
+    //     browser.notifications.create(
+    //       'saveScreenshotPng',
+    //       {
+    //         type: 'basic',
+    //         iconUrl: '/static/nooboxLogos/icon_128x128.png',
+    //         title: '文件保存成功',
+    //         message: `${path}`,
+    //       },
+    //       id => {
+    //         console.log(chrome.runtime.lastError);
+    //       },
+    //     );
+    //   } else {
+    //     browser.notifications.create(
+    //       'saveScreenshotPng',
+    //       {
+    //         type: 'basic',
+    //         iconUrl: '/static/nooboxLogos/icon_128x128.png',
+    //         title: '文件保存失败',
+    //         message: `${path}`,
+    //       },
+    //       () => {},
+    //     );
+    //   }
+  } else {
+    console.log(response);
+  }
+});
+
+/*
+Listen for the native messaging port closing.
+*/
+port.onDisconnect.addListener(port => {
+  if (port.error) {
+    console.log(`Disconnected due to an error: ${port.error.message}`);
+  } else {
+    // The port closed for an unspecified reason. If this occurred right after
+    // calling `chrome.runtime.connectNative()` there may have been a problem
+    // starting the the native messaging client in the first place.
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging#troubleshooting
+    console.log(`Disconnected`, port);
+  }
+});
+
+chrome.runtime.onConnect.addListener(port => {
+  if (port.name === 'contentScriptPort') {
+    port.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === 'requestTabId') {
+        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+          const currentTabId = tabs[0].id;
+          port.postMessage({ type: 'tabId', tabId: currentTabId });
+        });
+      }
+    });
+  }
+});
 
 const autoRefresh = new AutoRefresh();
 const image = new Image();
 const options = new Options();
 
 let lastVideoControl = 0;
+
+let taskQueue = [];
+// 保持运行的脚本的tab
+let activeTabs = [];
+// 初次加载使用的tab，
+const processedTabs = new Map();
 
 chrome.runtime.onInstalled.addListener(function() {
   console.log('Extension installed');
@@ -135,95 +202,318 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         }
       }
     });
-  } else if (job == 'handleSearch') {
-    // // const { tabId } = request;
-    // console.log(sender.tab.id)
-    // // const tabId =  await getCurrentTab()
-    // chrome.tabs.executeScript({
-    //   target: { tabId: sender.tab.id, allFrames: true },
-    //   code: `console.log('location:', window.location.href);`,
-    // }, () => console.log("script injected in all frames"))
-    // sendResponse(request);
-
-    // });
-
-    try {
-      // chrome.debugger.onEvent.addListener((source, method, params) => {
-      //   console.log(source);
-      // });
-      // Create a tab or find a tab to attach to.
-    } catch (error) {
-      console.error('Error running Puppeteer:', error);
+  } else if (job == 'handleImageTasks') {
+    const {
+      action,
+      base64Array,
+      savePath,
+      concurrent,
+      tabId,
+      platform,
+    } = request; // DataURL
+    if (action === 'startTasks') {
+      startTasks(base64Array, savePath, concurrent, platform);
     }
+
+    sendResponse({ done: true });
+  } else if (job == 'saveCanvasData') {
+    console.log(request);
+    const { dataUrl, filename, savePath, tabId } = request;
+    captureBackgroundTabScreenshot(tabId, savePath, filename);
+
+    // port.postMessage({
+    //   action: 'download',
+    //   url: dataUrl, // url或者base64
+    //   filename: filename,
+    //   save_path: savePath,
+    // });
+    // // tabsRemove(tabId);
+    // taskCompleted(tabId);
+    // sendResponse({
+    //   done: true,
+    // });
+  } else if (job == 'getFullPath') {
+    chrome.runtime.requestFileSystem(
+      chrome.fileSystem.PERSISTENT,
+      5 * 1024 * 1024,
+      fs => {
+        console.log('Initialized file system: ' + fs.name);
+        // 选择一个文件
+        chrome.fileSystem.chooseEntry({ type: 'openFile' }, function(entry) {
+          if (!entry) {
+            console.error('No file selected');
+            return;
+          }
+
+          // 获取文件信息
+          entry.file(
+            function(file) {
+              console.log('File name:', file.name);
+              console.log('File size:', file.size);
+              console.log('File type:', file.type);
+              console.log('Last modified:', file.lastModified);
+
+              // 读取文件内容
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                console.log('File content:', e.target.result);
+              };
+              reader.readAsText(file);
+            },
+            function(error) {
+              console.error('Error getting file: ', error);
+            },
+          );
+        });
+      },
+      function(error) {
+        console.error('Error initializing file system: ', error);
+      },
+    );
   }
 });
+
+// 使用 chrome.debugger API，可支持在tab不激活状态下截图
+function captureBackgroundTabScreenshot(tabId, savePath, filename) {
+  // 连接到目标标签页
+  chrome.debugger.attach(
+    {
+      tabId,
+      // targetId: tabId
+    },
+    '1.3',
+    () => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          'Debugger attach failed:',
+          chrome.runtime.lastError.message,
+        );
+        return;
+      }
+
+      // 启用页面事件
+      chrome.debugger.sendCommand({ tabId }, 'Page.enable', () => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            'Page.enable command failed:',
+            chrome.runtime.lastError.message,
+          );
+          return;
+        }
+
+        try {
+          // 捕获截图
+          chrome.debugger.sendCommand(
+            { tabId },
+            'Page.captureScreenshot',
+            {},
+            result => {
+              if (chrome.runtime.lastError) {
+                console.error(
+                  'Page.captureScreenshot command failed:',
+                  chrome.runtime.lastError.message,
+                );
+                return;
+              }
+
+              // 处理截图数据
+              const dataUrl = `data:image/png;base64,${result.data}`;
+              // console.log('截图成功:', dataUrl);
+
+              // 保存截图
+              port.postMessage({
+                action: 'download',
+                url: dataUrl, // url或者base64
+                filename: filename,
+                save_path: savePath,
+              });
+
+              // 一个任务完成之后，随机读秒1-9，防止检测
+              // 随机生成1到9秒之间的延迟
+              const randomDelay = Math.floor(Math.random() * 9) + 1;
+              console.log(`任务完成，随机延迟 ${randomDelay} 秒`);
+
+              setTimeout(() => {
+                taskCompleted(tabId);
+
+                // 断开连接
+                chrome.debugger.detach({ tabId }, () => {
+                  if (chrome.runtime.lastError) {
+                    console.error(
+                      'Debugger detach failed:',
+                      chrome.runtime.lastError.message,
+                    );
+                  }
+                });
+              }, randomDelay * 1000);
+            },
+          );
+        } catch (error) {
+          console.error('Page.captureScreenshot command failed:', error);
+        }
+      });
+    },
+  );
+}
+
+function startTasks(base64Array, savePath, concurrent, platform) {
+  taskQueue = base64Array.map(item => ({ ...item, savePath, platform }));
+  activeTabs = new Map();
+
+  // 先绑定监听器
+  const onTabUpdated = (tabId, changeInfo, tab) => {
+    // console.log(`监听器触发：tabId=${tabId}, status=${changeInfo.status}`);
+    if (changeInfo.status === 'complete' && processedTabs.has(tabId)) {
+      if (tabId === tab.id) {
+        const task = processedTabs.get(tabId);
+        console.log(`标签页 ${tabId} 加载完成`);
+
+        if (task) {
+          chrome.tabs.sendMessage(
+            tabId,
+            {
+              action: 'runAutomation',
+              ...task,
+              tabId: tabId,
+            },
+            {},
+            () => {
+              if (chrome.runtime.lastError) {
+                console.error(
+                  '发送runAutomation失败：',
+                  chrome.runtime.lastError.message,
+                );
+              }
+            },
+          );
+        }
+
+        // chrome.tabs.get(tabId, currentTab => {
+        //   if (chrome.runtime.lastError) {
+        //     console.error('标签页不存在:', chrome.runtime.lastError);
+        //     return;
+        //   }
+        //   chrome.tabs.executeScript(
+        //     tabId,
+        //     {
+        //       file: 'js/content.js',
+        //       allFrames: true,
+        //       runAt: 'document_end',
+        //     },
+        //     () => {
+        //       if (chrome.runtime.lastError) {
+        //         console.error(
+        //           'Error Script execute:',
+        //           chrome.runtime.lastError,
+        //         );
+        //         return;
+        //       }
+        //       console.log(`标签页： ${tabId} Script executed successfully`);
+
+        //     },
+        //   );
+        // });
+
+        // 标记为已处理
+        processedTabs.delete(tabId);
+      }
+      // 如果没有其他需要处理的标签页，移除监听器
+      if (processedTabs.size === 0) {
+        chrome.tabs.onUpdated.removeListener(onTabUpdated);
+      }
+    }
+  };
+
+  chrome.tabs.onUpdated.addListener(onTabUpdated);
+
+  for (let i = 0; i < concurrent; i++) {
+    const task = taskQueue.shift();
+    createTabForTask(task);
+  }
+}
+
+function processNextTask(tabId) {
+  if (taskQueue.length === 0) {
+    return; // 没有更多任务
+  }
+
+  const task = taskQueue.shift();
+
+  // 找到一个空闲的标签页并发送任务
+  activeTabs.set(tabId, { newTask: task });
+  chrome.tabs.sendMessage(
+    tabId,
+    {
+      action: 'runAutomation',
+      ...task,
+      tabId: tabId,
+    },
+    () => {
+      console.log(`任务发送到标签页 ${tabId}`);
+    },
+  );
+}
+
+async function createTabForTask(task) {
+  chrome.windows.create(
+    {
+      // url: 'http://localhost:8081/index.html#/image',
+      url: task.platform == 'bsz' ? apiUrls.bszUrl : apiUrls.sszUrl,
+      type: 'normal', // 可选，指定窗口类型，默认为 'normal'
+      focused: true, // 可选，指定新窗口是否获得焦点
+      state: 'maximized',
+    },
+    async newWindow => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          'Error creating window:',
+          chrome.runtime.lastError.message,
+        );
+        return;
+      }
+
+      // 获取新窗口中的第一个标签页
+      const [tab] = newWindow.tabs;
+
+      console.log(`创建新窗口，标签页ID：${tab.id}`);
+      activeTabs.set(tab.id, { newTask: task });
+
+      // 记录需要处理的标签页
+      processedTabs.set(tab.id, task);
+    },
+  );
+}
+
+// 创建打开新标签页
+// async function createTabForTask(task) {
+//   chrome.tabs.create(
+//     {
+//       url: 'http://localhost:8081/index.html#/image',
+//       // url: apiUrls.bszUrl
+//     },
+//     async tab => {
+//       if (chrome.runtime.lastError) {
+//         console.error('Error creating tab:', chrome.runtime.lastError.message);
+//         return;
+//       }
+//       console.log(`创建标签页：${tab.id}`);
+//       activeTabs.set(tab.id, { newTask: task });
+
+//       // 记录需要处理的标签页
+//       processedTabs.set(tab.id, task);
+//     },
+//   );
+// }
+
+// 一个任务完成之后
+function taskCompleted(tabId) {
+  if (activeTabs.has(tabId)) {
+    activeTabs.set(tabId, { newTask: null });
+  }
+  processNextTask(tabId); // 处理下一个任务
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   await options.init();
   await image.init();
 });
-
-// chrome.runtime.onInstalled.addListener(() => {
-//   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-//     if (tabs.length > 0) {
-//       const tabId = tabs[0].id;
-//       chrome.debugger.attach({ tabId }, '1.3', () => {
-//         if (chrome.runtime.lastError) {
-//           console.error(
-//             'Debugger attach failed:',
-//             chrome.runtime.lastError.message,
-//           );
-//           return;
-//         }
-
-//         chrome.debugger.sendCommand({ tabId }, 'Page.enable', () => {
-//           if (chrome.runtime.lastError) {
-//             console.error(
-//               'Page.enable command failed:',
-//               chrome.runtime.lastError.message,
-//             );
-//             return;
-//           }
-
-//           chrome.debugger.sendCommand(
-//             { tabId },
-//             'Page.navigate',
-//             { url: 'https://example.com' },
-//             () => {
-//               if (chrome.runtime.lastError) {
-//                 console.error(
-//                   'Page.navigate command failed:',
-//                   chrome.runtime.lastError.message,
-//                 );
-//                 return;
-//               }
-
-//               chrome.debugger.sendCommand(
-//                 { tabId },
-//                 'Page.loadEventFired',
-//                 () => {
-//                   if (chrome.runtime.lastError) {
-//                     console.error(
-//                       'Page.loadEventFired command failed:',
-//                       chrome.runtime.lastError.message,
-//                     );
-//                     return;
-//                   }
-
-//                   chrome.debugger.detach({ tabId }, () => {
-//                     if (chrome.runtime.lastError) {
-//                       console.error(
-//                         'Debugger detach failed:',
-//                         chrome.runtime.lastError.message,
-//                       );
-//                     }
-//                   });
-//                 },
-//               );
-//             },
-//           );
-//         });
-//       });
-//     }
-//   });
-// });

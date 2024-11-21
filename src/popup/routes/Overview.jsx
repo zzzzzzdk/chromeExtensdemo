@@ -5,6 +5,7 @@ import reduxActions from 'SRC/popup/reduxActions.js';
 import reselector from 'SRC/popup/reselector.js';
 import { Button } from 'antd';
 import UploadImage from 'SRC/popup/components/overview/UploadImage.jsx';
+import UploadFolder from '../components/overview/UploadFolder.jsx';
 import AutoRefresh from 'SRC/popup/components/overview/AutoRefresh.jsx';
 import H5VideoControl from 'SRC/popup/components/overview/H5VideoControl.jsx';
 import Loader from 'SRC/common/component/Loader.jsx';
@@ -93,25 +94,6 @@ class Overview extends React.Component {
     }
   }
 
-  async handleOn() {
-    chrome.runtime.sendMessage({
-      job: 'handleSearch',
-      tabId: '123',
-    });
-    // 获取当前激活的tab页
-    // let tab
-    // await chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    //   console.log(tabs)
-    //   if (tabs[0]) {
-    //     console.log('当前tab: ', tabs[0])
-
-    //     await chrome.tabs.sendMessage(tabs[0].id, { action: "autoUploadAndSearch" }, () => {
-
-    //     })
-    //   } else {
-    //   }
-    // })
-  }
 
   render() {
     const { actions, overview, options } = this.props;
@@ -121,7 +103,8 @@ class Overview extends React.Component {
     } else {
       let imageSearch = overview.showImageSearch ? (
         <div className="uploadImage">
-          <UploadImage imageSearchBegin={actions.imageSearchBegin} />
+          {/* <UploadImage imageSearchBegin={actions.imageSearchBegin} /> */}
+          <UploadFolder imageSearchBegin={actions.imageSearchBegin} />
         </div>
       ) : (
         undefined
@@ -181,7 +164,6 @@ class Overview extends React.Component {
           {/* {autoRefresh} */}
           {html5Video}
           {funStuff}
-          {/* <Button onClick={this.handleOn}>执行</Button> */}
         </OverviewContainer>
       );
     }

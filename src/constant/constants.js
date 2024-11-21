@@ -26,7 +26,8 @@ export const ENGINE_WEIGHTS = {
 
 export const AllowIps = [
   '192.168.11.12',
-  '56.38.1.138',
   'localhost',
   '127.0.0.1',
+  '56.38.1.138',
+  '56.38.1.136',
 ];
