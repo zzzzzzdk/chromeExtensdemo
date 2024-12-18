@@ -7,7 +7,7 @@ import {
   sendMessage,
   sendTabMessage,
 } from 'SRC/utils/browserUtils';
-import { getDB, set } from '../utils/db';
+import { getDB, set, deleteDB } from '../utils/db';
 import { wait } from '../utils';
 import { logEvent } from '../utils/bello';
 import { apiUrls } from 'SRC/constant/searchApiUrl.js';
@@ -85,6 +85,7 @@ const options = new Options();
 
 let lastVideoControl = 0;
 
+let taskStorePath = '';
 let taskQueue = [];
 // 保持运行的脚本的tab
 let activeTabs = [];
@@ -210,9 +211,11 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       concurrent,
       tabId,
       platform,
+      filePath,
+      provinceCheckedList,
     } = request; // DataURL
     if (action === 'startTasks') {
-      startTasks(base64Array, savePath, concurrent, platform);
+      startTasks(request);
     }
 
     sendResponse({ done: true });
@@ -328,6 +331,14 @@ function captureBackgroundTabScreenshot(tabId, savePath, filename) {
                 save_path: savePath,
               });
 
+              // 更新 localStorage 中的任务进度
+              let currentProgress = parseInt(
+                localStorage.getItem(taskStorePath),
+                10,
+              );
+              currentProgress++;
+              localStorage.setItem(taskStorePath, currentProgress);
+
               // 一个任务完成之后，随机读秒1-9，防止检测
               // 随机生成1到9秒之间的延迟
               const randomDelay = Math.floor(Math.random() * 9) + 1;
@@ -356,9 +367,50 @@ function captureBackgroundTabScreenshot(tabId, savePath, filename) {
   );
 }
 
-function startTasks(base64Array, savePath, concurrent, platform) {
-  taskQueue = base64Array.map(item => ({ ...item, savePath, platform }));
+async function startTasks(request) {
+  const {
+    action,
+    // base64Array,
+    savePath,
+    concurrent,
+    tabId,
+    platform,
+    filePath,
+    provinceCheckedList,
+    sliderValue,
+    startDate,
+    endDate,
+  } = request; // DataURL
+
+  const base64Array = await getDB(filePath);
+  taskQueue = base64Array.map(item => ({
+    ...item,
+    savePath,
+    platform,
+    provinceCheckedList,
+    sliderValue,
+    startDate,
+    endDate,
+  }));
   activeTabs = new Map();
+
+  await deleteDB(filePath);
+
+  // 初始化 localStorage 中的任务进度
+  taskStorePath = filePath;
+
+  // 检查 localStorage 中是否存在相同的 taskStorePath 和任务进度
+  const storedProgress = localStorage.getItem(taskStorePath);
+  let initialProgress = 0;
+
+  if (storedProgress) {
+    initialProgress = parseInt(storedProgress, 10);
+    console.log(`从进度 ${initialProgress} 开始`);
+    taskQueue = taskQueue.slice(initialProgress); // 从该进度之后开始执行任务
+  } else {
+    console.log('从头开始');
+    localStorage.setItem(taskStorePath, 0);
+  }
 
   // 先绑定监听器
   const onTabUpdated = (tabId, changeInfo, tab) => {
@@ -458,7 +510,8 @@ async function createTabForTask(task) {
   chrome.windows.create(
     {
       // url: 'http://localhost:8081/index.html#/image',
-      url: task.platform == 'bsz' ? apiUrls.bszUrl : apiUrls.sszUrl,
+      url: 'https://www.baidu.com/',
+      // url: task.platform == 'bsz' ? apiUrls.bszUrl : apiUrls.sszUrl,
       type: 'normal', // 可选，指定窗口类型，默认为 'normal'
       focused: true, // 可选，指定新窗口是否获得焦点
       state: 'maximized',
@@ -509,6 +562,11 @@ async function createTabForTask(task) {
 function taskCompleted(tabId) {
   if (activeTabs.has(tabId)) {
     activeTabs.set(tabId, { newTask: null });
+  }
+
+  if (taskQueue.length === 0) {
+    console.log('所有任务已完成，清楚localstorage');
+    localStorage.removeItem(taskStorePath);
   }
   processNextTask(tabId); // 处理下一个任务
 }

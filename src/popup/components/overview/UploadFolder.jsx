@@ -2,8 +2,26 @@ import React from 'react';
 import FAIcon from '@fortawesome/react-fontawesome';
 import faSolid from '@fortawesome/fontawesome-free-solid';
 import styled from 'styled-components';
-import { Upload, Button, message, Form, Radio, Input } from 'antd';
+import {
+  Upload,
+  Button,
+  message,
+  Form,
+  Radio,
+  Input,
+  Slider,
+  InputNumber,
+  Row,
+  Col,
+  TimePicker,
+  DatePicker,
+  Modal,
+} from 'antd';
 import { apiUrls } from 'SRC/constant/searchApiUrl.js';
+import { regions } from 'SRC/constant/constants.js';
+import Province from '../Province';
+import { isOptionOn, getDB, setDB, deleteDB } from 'SRC/utils/db';
+import moment from 'moment';
 const Dragger = Upload.Dragger;
 
 const UploadFolderContainer = styled.div`
@@ -11,6 +29,11 @@ const UploadFolderContainer = styled.div`
     padding: 20px 10px 0 10px;
     .ant-form-item-with-help {
       margin-bottom: 13px;
+    }
+    .date-select {
+      .ant-calendar-picker {
+        min-width: 140px !important;
+      }
     }
     .ant-form-item {
       display: flex;
@@ -43,6 +66,7 @@ export default class UploadFolder extends React.Component {
       allowHandle: false,
       formData: {
         files: [],
+        filePath: '',
         // 上传目录
         folder_path: {
           value: '',
@@ -57,6 +81,10 @@ export default class UploadFolder extends React.Component {
         },
         concurrent: 2,
         platform: 'bsz',
+        provinceCheckedList: regions.flatMap(region => region.provinces),
+        sliderValue: 75,
+        startDate: null, // 添加 startDate 字段
+        endDate: null, // 添加 endDate 字段
       },
     };
   }
@@ -86,18 +114,39 @@ export default class UploadFolder extends React.Component {
   // 文件夹监听变化
   async handleFolderInputChange(e) {
     const files = e.target.files;
-    console.log(files);
+    console.log(files, e.target);
     if (files.length > 0) {
+      const folderPath = files[0].webkitRelativePath
+        .split('/')
+        .slice(0, -1)
+        .join('/');
+      console.log('Selected folder path:', folderPath);
       // 过滤出图片类型的文件
       const imageFiles = Array.from(files).filter(file =>
         file.type.startsWith('image/'),
       );
-
+      let currentProgress = parseInt(localStorage.getItem(folderPath), 10);
+      if (currentProgress) {
+        Modal.confirm({
+          title: '确认继续',
+          content: `当前文件夹进度已到${currentProgress}，是否继续？`,
+          onOk() {
+            // 用户选择继续，可以在这里添加继续执行的逻辑
+            console.log('继续执行');
+          },
+          onCancel() {
+            // 用户选择不继续，清除 localStorage 中的进度值
+            localStorage.removeItem(folderPath);
+            console.log('已清除进度');
+          },
+        });
+      }
       if (imageFiles.length > 0) {
         this.setState({
           formData: {
             ...this.state.formData,
             files: imageFiles,
+            filePath: folderPath,
             folder_path: {
               value: `获取到${imageFiles.length}个图片文件`,
               validateStatus: 'success',
@@ -111,6 +160,7 @@ export default class UploadFolder extends React.Component {
           formData: {
             ...this.state.formData,
             files: [],
+            filePath: '',
             folder_path: {
               value: '',
               validateStatus: 'error',
@@ -145,12 +195,12 @@ export default class UploadFolder extends React.Component {
   };
 
   handlePlatformChange = e => {
-    const value = e.target.value
+    const value = e.target.value;
     this.setState({
       formData: {
         ...this.state.formData,
         platform: e.target.value,
-        concurrent: value === 'ssz' ? 1 : 2
+        concurrent: value === 'ssz' ? 1 : 2,
       },
     });
   };
@@ -164,6 +214,89 @@ export default class UploadFolder extends React.Component {
     reader.onerror = function(err) {
       errorCb(err);
     };
+  }
+
+  handleProvinceChange = newCheckedList => {
+    console.log(newCheckedList);
+    this.setState({
+      formData: {
+        ...this.state.formData,
+        provinceCheckedList: newCheckedList,
+      },
+    });
+  };
+
+  // 处理滑块变化
+  onSliderChange = value => {
+    this.setState({
+      formData: {
+        ...this.state.formData,
+        sliderValue: value,
+      },
+    });
+  };
+
+  // 处理滑块输入框变化
+  onSliderInputChange = value => {
+    if (value !== undefined) {
+      this.setState({
+        formData: {
+          ...this.state.formData,
+          sliderValue: value,
+        },
+      });
+    }
+  };
+
+  // 处理开始时间变化
+  handleStartDateChange = date => {
+    this.setState({
+      formData: {
+        ...this.state.formData,
+        startDate: date,
+      },
+    });
+  };
+
+  // 处理结束时间变化
+  handleEndDateChange = date => {
+    this.setState({
+      formData: {
+        ...this.state.formData,
+        endDate: date,
+      },
+    });
+  };
+
+  disabledDate = current => {
+    if (!current) {
+      return false;
+    }
+
+    const now = new Date();
+    const sameDayLastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate(),
+    );
+
+    // 设置时间为当天的结束时间
+    const endOfDay = date => {
+      date.setHours(23, 59, 59, 999);
+      return date;
+    };
+
+    return current < sameDayLastMonth || current > endOfDay(now);
+  };
+  formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
 
   // 执行上传
@@ -184,6 +317,13 @@ export default class UploadFolder extends React.Component {
         errorMsg: '请输入结果保存路径',
       };
     }
+
+    // if (
+    //   newFormData.platform === 'bsz' &&
+    //   (!newFormData.startDate || !newFormData.endDate)
+    // ) {
+    //   verify = false;
+    // }
 
     if (!verify) {
       this.setState({
@@ -213,15 +353,25 @@ export default class UploadFolder extends React.Component {
     });
     const base64Array = await Promise.all(base64Promises);
     console.log('base64Array', base64Array);
+    await setDB(newFormData.filePath, base64Array);
     // 传递给background.js
     chrome.runtime.sendMessage(
       {
         job: 'handleImageTasks',
         action: 'startTasks',
-        base64Array: base64Array,
+        // base64Array: base64Array,
         savePath: newFormData.save_path.value,
         concurrent: newFormData.concurrent,
         platform: newFormData.platform,
+        filePath: newFormData.filePath,
+        provinceCheckedList: newFormData.provinceCheckedList,
+        sliderValue: newFormData.sliderValue,
+        startDate: newFormData.startDate
+          ? moment(newFormData.startDate).format('YYYY-MM-DD HH:mm:ss')
+          : null,
+        endDate: newFormData.endDate
+          ? moment(newFormData.endDate).format('YYYY-MM-DD HH:mm:ss')
+          : null,
       },
       response => {
         if (chrome.runtime.lastError) {
@@ -334,6 +484,79 @@ export default class UploadFolder extends React.Component {
               <Radio value={5}>5</Radio>
             </Radio.Group>
           </Form.Item>
+          {currentFormData.platform === 'bsz' && (
+            <Form.Item label="时间段选择" className="date-select">
+              <Row gutter={8}>
+                <Col span={11}>
+                  <DatePicker
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value={currentFormData.startDate}
+                    onChange={date => this.handleStartDateChange(date)}
+                    placeholder="开始时间"
+                    style={{ width: '100%' }}
+                    disabledDate={this.disabledDate} // 应用 disabledDate 函数
+                    disabled={!this.state.allowHandle}
+                  />
+                </Col>
+                <Col span={2}>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '100%',
+                      textAlign: 'center',
+                    }}
+                  >
+                    -
+                  </span>
+                </Col>
+                <Col span={11}>
+                  <DatePicker
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value={currentFormData.endDate}
+                    onChange={date => this.handleEndDateChange(date)}
+                    placeholder="结束时间"
+                    style={{ width: '100%' }}
+                    disabledDate={this.disabledDate} // 应用 disabledDate 函数
+                    disabled={!this.state.allowHandle}
+                  />
+                </Col>
+              </Row>
+            </Form.Item>
+          )}
+          {currentFormData.platform === 'bsz' && (
+            <Form.Item label="省份选择">
+              <Province
+                defaultCheckedList={this.state.formData.provinceCheckedList}
+                onChange={this.handleProvinceChange}
+                disabled={!this.state.allowHandle}
+              />
+            </Form.Item>
+          )}
+          {currentFormData.platform === 'ssz' && (
+            <Form.Item label="相似度">
+              <Row>
+                <Col span={12}>
+                  <Slider
+                    min={0}
+                    max={100}
+                    value={this.state.formData.sliderValue}
+                    onChange={this.onSliderChange}
+                  />
+                </Col>
+                <Col span={4}>
+                  <InputNumber
+                    min={0}
+                    max={100}
+                    style={{ margin: '0 16px' }}
+                    value={this.state.formData.sliderValue}
+                    onChange={this.onSliderInputChange}
+                  />
+                </Col>
+              </Row>
+            </Form.Item>
+          )}
           <Form.Item>
             <Button
               type="primary"

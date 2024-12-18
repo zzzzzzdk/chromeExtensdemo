@@ -29,6 +29,7 @@
         "thirdParty/html2canvas.min.js",
         "thirdParty/jquery.min.js",
         "js/automation.js",
+        "js/content-loader.js",
         "js/videoControl.js",
         "js/extractImages.js",
         "js/iframe.js"

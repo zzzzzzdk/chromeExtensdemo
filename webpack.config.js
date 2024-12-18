@@ -31,6 +31,11 @@ const x = {
       'regenerator-runtime/runtime',
       './src/imageSearch/imageSearch.js',
     ],
+    automation: [
+      'core-js/stable',
+      'regenerator-runtime/runtime',
+      './src/js/automation.js',
+    ],
   },
 
   resolve: {

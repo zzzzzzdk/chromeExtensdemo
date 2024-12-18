@@ -112,9 +112,16 @@ window.addEventListener('load', () => {
   }
 
   function runAutomation(message) {
-    const { filename, base64, savePath, tabId, platform } = message;
-    // return new Promise(async (resolve, reject) => {
-    // await sleep(5000);
+    const {
+      filename,
+      base64,
+      savePath,
+      tabId,
+      platform,
+      provinceCheckedList,
+    } = message;
+    // // return new Promise(async (resolve, reject) => {
+    // // await sleep(5000);
     // try {
     //   html2canvas(document.querySelector('body'), {
     //     useCORS: true,
@@ -157,7 +164,16 @@ window.addEventListener('load', () => {
 
   async function bszAutomation(message) {
     console.log(`bsz执行自动化任务: ${message.filename}`, message);
-    const { filename, base64, savePath, tabId, platform } = message;
+    const {
+      filename,
+      base64,
+      savePath,
+      tabId,
+      platform,
+      provinceCheckedList,
+      startDate,
+      endDate,
+    } = message;
     // 执行之前判断页面是否有元素，有的话代表之前执行过任务
     const clickImgBg = document.querySelector('.click-img-bg');
     if (clickImgBg) {
@@ -211,6 +227,26 @@ window.addEventListener('load', () => {
     const featureSubBtn = document.querySelector(
       '.h-target-img-upload__footer .el-button',
     );
+    // 未识别目标，直接保存，让程序运行下一张图
+    if (!featureItemFirst) {
+      try {
+        chrome.runtime.sendMessage(
+          {
+            job: 'saveCanvasData',
+            // dataUrl: imgSrc,
+            filename: filename,
+            savePath: savePath + '/低分',
+            tabId: tabId,
+          },
+          function(response) {
+            // console.log('保存图片结果:', response)
+          },
+        );
+      } catch (error) {
+        console.log(error);
+      }
+      return;
+    }
     if (featureItemFirst.classList.contains('is-active')) {
       featureSubBtn.click();
     } else {
@@ -218,7 +254,7 @@ window.addEventListener('load', () => {
       featureSubBtn.click();
     }
 
-    // 第一次检索的时候选中全部省份
+    // 第一次检索的时候选中全部省份，修改时间
     if (firstAutomation) {
       await sleep(1000);
 
@@ -229,19 +265,59 @@ window.addEventListener('load', () => {
       await sleep(800);
       // 选中省份全部
       const allBtns = document.querySelectorAll(
-        '.inner-distribute-item .handle-btn-all .inner-single-btn',
+        '.inner-distribute-item .handle-btn-distri .inner-single-btn',
       );
-      allBtns.forEach((elem, index) => {
-        // if (index > 1) return;
+      // allBtns.forEach((elem, index) => {
+      //   // if (index > 1) return;
+      //   const spanEle = elem.querySelector('span');
+      //   if (spanEle && spanEle.textContent.includes('全部')) {
+      //     elem.click();
+      //   }
+      // });
+
+      allBtns.forEach(elem => {
         const spanEle = elem.querySelector('span');
-        if (spanEle && spanEle.textContent.includes('全部')) {
-          elem.click();
+        if (spanEle) {
+          const spanText = spanEle.textContent.trim();
+          if (
+            provinceCheckedList.some(province => spanText.includes(province))
+          ) {
+            elem.click();
+          }
         }
       });
 
       document
         .querySelector('.data-range-container .container-right')
         .setAttribute('style', 'display:none;');
+
+      // -------修改时间
+      const dataInputArea = document.querySelector(
+        'div.topWrap.deep-topWrap > div.h-page-search.deep-page-search.row-amount-6 > form > div.h-page-search-item.searchItem > div > div > div',
+      );
+      if (dataInputArea && startDate && endDate) {
+        dataInputArea.click();
+        await sleep(1000);
+        const startDateInput = document.querySelector(
+          'div.topWrap.deep-topWrap > div.h-page-search.deep-page-search.row-amount-6 > form > div.h-page-search-item.searchItem > div > div > div > input:nth-child(1)',
+        );
+        const endDateInput = document.querySelector(
+          'div.topWrap.deep-topWrap > div.h-page-search.deep-page-search.row-amount-6 > form > div.h-page-search-item.searchItem > div > div > div > input:nth-child(3)',
+        );
+        startDateInput.value = startDate;
+        endDateInput.value = endDate;
+
+        startDateInput.dispatchEvent(new Event('input'));
+        startDateInput.dispatchEvent(new Event('change'));
+
+        endDateInput.dispatchEvent(new Event('input'));
+        endDateInput.dispatchEvent(new Event('change'));
+        await sleep(1000);
+        const dataOk = document.querySelector(
+          'div.el-picker-panel.el-date-range-picker.el-popper.has-time > div.el-picker-panel__footer > button.el-button.el-picker-panel__link-btn.el-button--primary',
+        );
+        dataOk.click();
+      }
 
       firstAutomation = false;
     }
@@ -398,7 +474,8 @@ window.addEventListener('load', () => {
   }
 
   async function iframeAuto(params, iframeDoc) {
-    const { filename, base64, savePath, tabId, platform } = params;
+    const { filename, base64, savePath, tabId, platform, sliderValue } = params;
+
     // 获取input文件元素
     const fileInput = iframeDoc.querySelector(
       '.imgResult-hearder .img-result-header-left  div.upload-card-item .bg-item .el-upload__input',
@@ -441,6 +518,49 @@ window.addEventListener('load', () => {
     await waitForLoadingElementToDisappear();
     await sleep(2000);
 
+    // 省时间默认选5天
+    const dateSelector = iframeDoc.querySelector(
+      'div.imgResult-hearder > div > div.hearer_right_wrap > div > div.hearer_right_wrap_L2 > div.pick-time-wrapper.hearer_right_text-right > div.el-radio-group.is-radio-group > div:nth-child(3) > label',
+    );
+    if (dateSelector) {
+      dateSelector.click();
+    }
+
+    // 自动化修改滑块和输入框的值
+    function automateSliderValue(newValue) {
+      // 目标相似度修改
+      const similarInput = iframeDoc.querySelector(
+        'div.imgResult-hearder > div > div.hearer_right_wrap > div > div.hearer_right_wrap_L3 > div.minSimilar_wrap > span.el-popover-wrap.tooltip-item > div > div > input',
+      );
+      similarInput.value = newValue;
+      similarInput.dispatchEvent(
+        new Event('input', { target: similarInput, bubbles: true }),
+      );
+      similarInput.onchange = function() {
+        console.log('模拟修改阈值已触发');
+      };
+      // 获取滑块和输入框的 DOM 元素
+      const sliderHandle = iframeDoc.querySelector(
+        'div.imgResult-hearder > div > div.hearer_right_wrap > div > div.hearer_right_wrap_L3 > div.minSimilar_wrap > span:nth-child(3) > div > div > div.el-slider__runway-click-area',
+      );
+
+      // 模拟滑块的拖动
+      const rect = sliderHandle.getBoundingClientRect();
+      const x = rect.left + (rect.width / 99) * newValue;
+      const y = rect.top + rect.height / 2;
+
+      // 触发鼠标事件
+      const mouseDownEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: x,
+        clientY: y,
+      });
+      sliderHandle.dispatchEvent(mouseDownEvent);
+    }
+
+    // 获取当前modal
     let modals = iframeDoc.querySelectorAll(
       '.el-dialog__wrapper.h-target-img-upload__dialog',
     );
@@ -459,6 +579,28 @@ window.addEventListener('load', () => {
       const featureSubBtn = openModal.querySelector(
         '.h-target-img-upload__footer .el-button',
       );
+
+      // 未识别目标，直接保存，让程序运行下一张图
+      if (!featureItemFirst) {
+        try {
+          chrome.runtime.sendMessage(
+            {
+              job: 'saveCanvasData',
+              // dataUrl: imgSrc,
+              filename: filename,
+              savePath: savePath + '/低分',
+              tabId: tabId,
+            },
+            function(response) {
+              // console.log('保存图片结果:', response)
+            },
+          );
+        } catch (error) {
+          console.log(error);
+        }
+        return;
+      }
+
       if (featureItemFirst.classList.contains('is-active')) {
         featureSubBtn.click();
       } else {
@@ -467,8 +609,12 @@ window.addEventListener('load', () => {
         featureSubBtn.click();
       }
     }
-
     await sleep(1200);
+
+    // 示例：将滑块和输入框的值设置为 50
+    automateSliderValue(sliderValue);
+    await sleep(1000);
+
     const searchBtn = iframeDoc.querySelector(
       '.el-button.search_but.el-button--primary',
     );
