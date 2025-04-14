@@ -101,7 +101,7 @@ const x = {
 module.exports = env => {
   if (env === 'prod') {
     x.optimization = {
-      minimizer: [new UglifyJsPlugin()],
+      minimizer: [new UglifyJsPlugin(), new UglifyJsPlugin()],
     };
   } else if (env === 'preProd') {
     x.plugins.push(new BundleAnalyzerPlugin());
