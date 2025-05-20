@@ -94,6 +94,8 @@ const processedTabs = new Map();
 
 chrome.runtime.onInstalled.addListener(function() {
   console.log('Extension installed');
+  // 初始化时清除所有数据
+  // chrome.storage.sync.clear();
 });
 
 browser.tabs.onRemoved.addListener(tabId => {
@@ -273,8 +275,46 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         console.error('Error initializing file system: ', error);
       },
     );
+  } else if (job === 'inject_automation') {
+    console.log('inject_automation', chrome.tabs);
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      const tabId = tabs[0].id;
+      chrome.tabs.executeScript(
+        tabId,
+        {
+          code: `
+            var script = document.createElement('script');
+            script.src = 'http://localhost:8000/automation.js';
+            document.head.appendChild(script);
+          `,
+          runAt: 'document_end',
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error('注入失败:', chrome.runtime.lastError);
+            return;
+          }
+          console.log('外部脚本注入成功');
+        },
+      );
+    });
   }
 });
+
+// 保存用户登录状态
+function saveUserState(userToken, callback) {
+  chrome.storage.sync.set({ userToken: userToken }, function() {
+    console.log('用户已登录');
+    callback();
+  });
+}
+
+// 获取用户登录状态
+function getUserState(callback) {
+  chrome.storage.sync.get(['userToken'], function(result) {
+    callback(!!result.userToken);
+  });
+}
 
 // 使用 chrome.debugger API，可支持在tab不激活状态下截图
 function captureBackgroundTabScreenshot(tabId, savePath, filename) {
