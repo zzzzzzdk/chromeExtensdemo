@@ -1,0 +1,9 @@
+{
+  "name": "com.yisa.nativeapp",
+  "description": "Yisa Native App",
+  "path": "./一键联查.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://oacmjpblobgdfpcndnlembgkbhpahffa/"
+  ]
+}

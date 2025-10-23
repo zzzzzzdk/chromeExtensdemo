@@ -94,6 +94,40 @@ class Overview extends React.Component {
     }
   }
 
+  // 一键触发saveCanvasData方法的测试方法
+  handleScreenshotTest = () => {
+    try {
+      // 获取当前活跃的标签页（使用回调函数方式）
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (tabs && tabs.length > 0) {
+          const tab = tabs[0];
+
+          // 生成测试文件名（使用当前时间戳确保唯一性）
+          const timestamp = new Date().getTime();
+          const filename = 'test_' + timestamp + '.png';
+          const savePath = 'E:/研判'; // 默认保存路径
+
+          // 向background script发送saveCanvasData任务
+          chrome.runtime.sendMessage(
+            {
+              job: 'saveCanvasData',
+              filename: filename,
+              savePath: savePath,
+              tabId: tab.id
+            },
+            function(response) {
+              console.log('保存图片结果:', response);
+              alert('截图已保存到: ' + savePath + ' 文件名: ' + filename);
+            }
+          );
+        }
+      });
+    } catch (error) {
+      console.error('调用saveCanvasData时出错:', error);
+      alert('调用saveCanvasData时出错: ' + error.message);
+    }
+  }
+
   render() {
     const { actions, overview, options } = this.props;
     // console.log(options)
@@ -163,6 +197,17 @@ class Overview extends React.Component {
           {/* {autoRefresh} */}
           {html5Video}
           {funStuff}
+
+          {/* 测试按钮 - 一键触发截图功能 */}
+          {/* <div style={{ margin: '10px', textAlign: 'center' }}>
+            <Button
+              type="primary"
+              onClick={this.handleScreenshotTest}
+              icon="camera"
+            >
+              测试截图功能
+            </Button>
+          </div> */}
         </OverviewContainer>
       );
     }
