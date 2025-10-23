@@ -7,3 +7,18 @@ package-lock.json
 /.vscode/
 *.iml
 /dist_bak/
+
+# Exclude large binary files
+*.exe
+install/*.exe
+main.exe
+
+# Exclude image files that might be large
+saveImgs/*.png
+saveImgs/*/*.png
+
+# Exclude other potential large files
+*.zip
+*.tar.gz
+*.crx
+*.pdf
